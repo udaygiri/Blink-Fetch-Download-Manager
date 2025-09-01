@@ -24,12 +24,15 @@ def get_file_size(url):
     response = requests.head(url)
     return int(response.headers.get('content-length', 0))
 
-def download_file(url, num_threads=4, progress_callback=None):
+def download_file(url, num_threads=4, progress_callback=None, filepath=None):
 
     if url is None:
         raise ValueError("URL must be provided")
 
-    filename = file_path(url)
+    if filepath is None:
+        filename = file_path(url)
+    else:
+        filename = filepath
     file_size = get_file_size(url)
     chunk_size = file_size // num_threads
 

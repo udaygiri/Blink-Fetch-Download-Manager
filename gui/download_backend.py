@@ -18,3 +18,4 @@ class DownloadThread(threading.Thread):
 
     def stop(self):
         self._stop_event.set()
+
