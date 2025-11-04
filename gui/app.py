@@ -78,7 +78,7 @@ class DownloadManagerApp(ctk.CTk):
         self.progress_bar.set(0)
         self.progress_bar.place(x=120, y=320)
 
-        self.status_label = ctk.CTkLabel(self, text="Idle", text_color="gray", font=("Segoe UI", 12))
+        self.status_label = ctk.CTkLabel(self, text=" ", text_color="gray", font=("Segoe UI", 12))
         self.status_label.place(x=30, y=360)
 
         self.download_thread = None

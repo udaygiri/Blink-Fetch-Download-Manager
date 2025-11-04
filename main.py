@@ -1,9 +1,9 @@
-from function.Downloads import download_file
+from gui.app import DownloadManagerApp
 
 def main():
-    print("Hello from blink-fetch-download-manager!")
-    url = r"https://bits.avcdn.net/productfamily_ANTIVIRUS/insttype_FREE/platform_WIN/installertype_ONLINE/build_RELEASE/cookie_mmm_cnt_dlp_007_906_m"
-    download_file(url)
+   
+    app = DownloadManagerApp()
+    app.mainloop()
 
 
 if __name__ == "__main__":

@@ -71,5 +71,3 @@ def file_path(url):
 
     # print(filepath)
     return filepath
-
-# file_path(r"https://download.cnet.com/support/avast-free-antivirus/3000-2239_4-10019223.html")
