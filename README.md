@@ -89,8 +89,8 @@
 
 1. **Clone the repository**
 ```powershell
-git clone https://github.com/yourusername/blink-fetch-download-manager.git
-cd blink-fetch-download-manager
+git clone https://github.com/udaygiri/Blink-Fetch-Download-Manager.git
+cd Blink-Fetch-Download-Manager
 ```
 
 2. **Install dependencies**
@@ -269,8 +269,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact & Support
 
-- 🐛 **Issues:** [GitHub Issues](https://github.com/yourusername/blink-fetch-download-manager/issues)
-- 💬 **Discussions:** [GitHub Discussions](https://github.com/yourusername/blink-fetch-download-manager/discussions)
+- 🐛 **Issues:** [GitHub Issues](https://github.com/udaygiri/Blink-Fetch-Download-Manager/issues)
+- 💬 **Discussions:** [GitHub Discussions](https://github.com/udaygiri/Blink-Fetch-Download-Manager/discussions)
 - ⭐ **Star this repo** if you find it useful!
 
 ---
