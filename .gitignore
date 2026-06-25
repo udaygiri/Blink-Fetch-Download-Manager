@@ -1,10 +1,63 @@
-# Python-generated files
+# Python Caches & Compiled files
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
 wheels/
-*.egg-info
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Virtual environments
+# Installer/PyInstaller packages
+*.manifest
+*.spec
+BlinkFetch_Setup.exe
+
+# Installer compiler directories & temp files
+output/
+
+# Environments & Packaging
+.env
 .venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+uv.lock
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# OS-generated files
+Thumbs.db
+db.db
+Desktop.ini
+.DS_Store
+
+# Local application files
+Downloads/
+temp/
+downloads_history.json
+settings_config.json
+*.log

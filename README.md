@@ -168,7 +168,7 @@ Blink Fetch Download Manager/
 │   ├── Downloads.py           # Core download logic with multi-threading
 │   └── File_path.py           # File categorization and path handling
 │
-├── 📁 Downloads/              # Default download directory
+├── 📁 ~/Downloads/Blink Fetch/ # Default system download directory
 │   ├── 🗜️ Compressed/
 │   ├── 🖼️ Pictures/
 │   ├── 🎬 Videos/
@@ -201,7 +201,13 @@ Blink Fetch Download Manager/
 ## 🔧 Configuration
 
 ### Default Download Path
-The app remembers your last selected folder. First time default: `./Downloads/`
+The app remembers your last selected folder. First time default: `~/Downloads/Blink Fetch/`
+
+### Settings & History Location
+To avoid permission issues when installed on Windows (`Program Files`), application configurations and history are saved in the user's home directory:
+`~/.blink_fetch_download_manager/`
+- `downloads_history.json`: List of download records.
+- `settings_config.json`: Custom configuration settings.
 
 ### Number of Threads
 Default: 4 threads per download. Can be customized in code:

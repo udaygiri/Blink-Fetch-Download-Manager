@@ -1,228 +1,276 @@
+"""
+Main GUI Window
+
+Main window of the application. It creates and sets up the layout, sidebar,
+and panels, and delegates settings and download tasks to their controllers.
+"""
+
 import os
+import sys
+import ctypes
 import customtkinter as ctk
-from tkinter import filedialog
 from tkinter import messagebox
-from gui.download_backend import DownloadThread
 
-# Category options with icons (icon support is limited in customtkinter, so use text for now)
-CATEGORIES = [
-    "🗜️ Compressed",
-    "🖼️ Pictures",
-    "🎬 Videos",
-    "🎵 Music",
-    "📄 Documents",
-    "⚙️ Executables",
-    "💻 Code",
-    "📦 Others"
-]
-
-
-
+from gui.sidebar import SidebarFrame
+from gui.history_panel import HistoryPanel
+from gui.add_download_panel import AddDownloadPanel
+from gui.settings_panel import SettingsPanel
+from gui.progress_panel import ProgressPanel
+from gui.download_controller import DownloadController
+from gui.settings_manager import load_settings, save_settings
+from gui.history_manager import delete_download_record
 
 class DownloadManagerApp(ctk.CTk):
+    """
+    The main download manager application window class.
+    """
     def __init__(self):
+        """
+        Initializes the window size, theme, and child panels.
+        """
         super().__init__()
         self.title("Blink Fetch Download Manager")
-        self.geometry("600x440")
-        self.resizable(False, False)
+        self.geometry("800x520")
+        self.resizable(True, True)
+        self.minsize(800, 520)
         self.configure(fg_color="#181c24")
 
-        # Default download path
-        self.default_download_path = os.path.abspath("Downloads")
-
-        # Title
-        self.title_label = ctk.CTkLabel(self, text="Add Download", font=("Segoe UI Bold", 22), text_color="#b388ff")
-        self.title_label.place(x=30, y=15)
-
-        # URL
-        self.url_entry = ctk.CTkEntry(self, width=440, height=36, font=("Segoe UI", 13), corner_radius=10, placeholder_text="Paste download URL here...")
-        self.url_entry.place(x=30, y=55)
-
-        # Category
-        self.use_category_var = ctk.BooleanVar(value=True)
-        self.use_category_cb = ctk.CTkCheckBox(self, text="Use Category", variable=self.use_category_var, font=("Segoe UI", 12), command=self.update_folder)
-        self.use_category_cb.place(x=30, y=105)
-
-        self.category_var = ctk.StringVar(value=CATEGORIES[0])
-        self.category_combo = ctk.CTkComboBox(self, values=CATEGORIES, variable=self.category_var, width=170, font=("Segoe UI", 12), corner_radius=8, command=self.update_folder)
-        self.category_combo.place(x=150, y=105)
-
-        self.size_label = ctk.CTkLabel(self, text="File Size: --", text_color="#aaa", font=("Segoe UI", 12))
-        self.size_label.place(x=350, y=105)
-
-        # Folder
-        self.folder_label = ctk.CTkLabel(self, text="Save to:", font=("Segoe UI", 12))
-        self.folder_label.place(x=30, y=150)
-        self.folder_var = ctk.StringVar(value=self.default_download_path)
-        self.folder_entry = ctk.CTkEntry(self, width=320, height=32, textvariable=self.folder_var, font=("Segoe UI", 12), corner_radius=8)
-        self.folder_entry.place(x=100, y=150)
-        self.browse_btn = ctk.CTkButton(self, text="Browse", width=60, height=32, font=("Segoe UI", 11), fg_color="#232946", hover_color="#7b2ff2", command=self.browse_folder, corner_radius=8)
-        self.browse_btn.place(x=430, y=150)
-
-        # Filename
-        self.filename_label = ctk.CTkLabel(self, text="Filename:", font=("Segoe UI", 12))
-        self.filename_label.place(x=30, y=195)
-        self.filename_var = ctk.StringVar(value="")
-        self.filename_entry = ctk.CTkEntry(self, width=320, height=32, textvariable=self.filename_var, font=("Segoe UI", 12), corner_radius=8)
-        self.filename_entry.place(x=100, y=195)
-
-        # Download button
-        self.download_btn = ctk.CTkButton(self, text="Download", width=120, height=38, font=("Segoe UI Bold", 14), fg_color="#7b2ff2", hover_color="#b388ff", command=self.start_download, corner_radius=10)
-        self.download_btn.place(x=230, y=250)
-
-        # Progress and status
-        self.progress_label = ctk.CTkLabel(self, text="Progress:", font=("Segoe UI", 12))
-        self.progress_label.place(x=30, y=320)
-
-        self.progress_bar = ctk.CTkProgressBar(self, width=400)
-        self.progress_bar.set(0)
-        self.progress_bar.place(x=120, y=320)
-
-        self.status_label = ctk.CTkLabel(self, text=" ", text_color="gray", font=("Segoe UI", 12))
-        self.status_label.place(x=30, y=360)
-
-        self.download_thread = None
-        self.current_url = None
-
-        # Events
-        self.url_entry.bind('<FocusOut>', self.update_file_info)
-
-    def browse_folder(self):
-        folder = filedialog.askdirectory()
-        if folder:
-            self.folder_var.set(folder)
-            self.default_download_path = folder
-
-    def update_folder(self, event=None):
-        if self.use_category_var.get():
-            category = self.category_var.get()[2:]
-            new_path = os.path.join(self.default_download_path, category)
-            self.folder_var.set(os.path.abspath(new_path))
-
-    def start_download(self):
-        url = self.url_entry.get().strip()
-        folder = self.folder_var.get().strip()
-        filename = self.filename_var.get().strip()
-        if not url:
-            messagebox.showerror("Error", "Please enter a download URL.")
-            return
-        self.status_label.configure(text="Starting download...", text_color="blue")
-        self.progress_bar.set(0)
-        self.download_btn.configure(state="disabled")
-        # Save to folder/filename
-        if not os.path.exists(folder):
-            os.makedirs(folder, exist_ok=True)
-        filepath = os.path.join(folder, filename)
-        self.current_url = url
-        self.download_thread = DownloadThread(
-            url,
-            filepath,
-            progress_callback=self.update_progress,
-            error_callback=self.download_error
-        )
-        self.download_thread.start()
-
-    def browse_folder(self):
-        folder = filedialog.askdirectory()
-        if folder:
-            self.folder_var.set(folder)
-
-    def update_folder(self, event=None):
-        if self.use_category_var.get():
-            self.folder_var.set(os.path.abspath(f"Downloads/{self.category_var.get()[2:]}"))
-
-    def update_file_info(self, event=None):
-        url = self.url_entry.get().strip()
-        if not url:
-            return
+        # Set custom window and taskbar icon for Windows
         try:
-            # Use file_path.py logic to get filename and category
-            import importlib.util
-            import sys
-            spec = importlib.util.spec_from_file_location("file_path", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "function", "file_path.py")))
-            file_path_mod = importlib.util.module_from_spec(spec)
-            sys.modules["file_path"] = file_path_mod
-            spec.loader.exec_module(file_path_mod)
-
-            # Get filename using file_path.py logic (without creating folders)
-            response = file_path_mod.requests.head(url, allow_redirects=True)
-            if response.status_code != 200:
-                response = file_path_mod.requests.get(url, stream=True, allow_redirects=True)
-            content_disposition = response.headers.get('Content-Disposition')
-            filename = None
-            if content_disposition:
-                fname_match = file_path_mod.re.search(r"filename\*?=(?:UTF-8''|\"|')?([^;\"']+)", content_disposition, file_path_mod.re.IGNORECASE)
-                if fname_match:
-                    filename = fname_match.group(1)
-                    if filename.startswith('=?') and filename.endswith('?='):
-                        decoded_parts = file_path_mod.decode_header(filename)
-                        filename = ''.join([
-                            part.decode(encoding or 'utf-8') if isinstance(part, bytes) else part
-                            for part, encoding in decoded_parts
-                        ])
-            if not filename:
-                filename = url.split("/")[-1]
-            self.filename_var.set(filename)
-
-            # File size
-            size = int(response.headers.get('content-length', 0))
-            size_str = f"{size/1e6:.2f} MB" if size else "--"
-            self.size_label.configure(text=f"File Size: {size_str}")
-
-            # Category
-            category = file_path_mod.get_category(filename)
-            # Map category to emoji label
-            cat_map = {
-                "Compressed": "🗜️ Compressed",
-                "Pictures": "🖼️ Pictures",
-                "Videos": "🎬 Videos",
-                "Music": "🎵 Music",
-                "Documents": "📄 Documents",
-                "Executables": "⚙️ Executables",
-                "Code": "💻 Code",
-                "Others": "📦 Others"
-            }
-            self.category_var.set(cat_map.get(category, "📦 Others"))
-            self.update_folder()
+            myappid = 'udaygiri.blinkfetch.downloadmanager.1.0'
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except Exception:
-            self.size_label.configure(text="File Size: --")
-            self.filename_var.set("")
+            pass
 
-    def start_download(self):
-        url = self.url_entry.get().strip()
-        folder = self.folder_var.get().strip()
-        filename = self.filename_var.get().strip()
-        if not url:
-            messagebox.showerror("Error", "Please enter a download URL.")
+        icon_name = "Blink Fetch Download Manager logo.ico"
+        icon_path = os.path.abspath(icon_name)
+        if not os.path.exists(icon_path):
+            dev_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            icon_path = os.path.join(dev_root, icon_name)
+        if not os.path.exists(icon_path):
+            base_path = getattr(sys, '_MEIPASS', None)
+            if base_path:
+                icon_path = os.path.join(base_path, icon_name)
+        
+        if os.path.exists(icon_path):
+            try:
+                self.iconbitmap(icon_path)
+                # Overwrite CustomTkinter's default theme icon after the window maps
+                self.after(200, lambda: self.iconbitmap(icon_path))
+            except Exception:
+                pass
+
+        # Config variables
+        # Locate user's system Downloads folder and use "Downloads/Blink Fetch"
+        system_downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+        self.default_download_path = os.path.join(system_downloads, "Blink Fetch")
+
+        # Settings variables (Updated by SettingsPanel)
+        self.settings_threads_var = ctk.StringVar(value="4")
+        self.settings_theme_var = ctk.StringVar(value="Dark")
+
+        # Load configuration preferences
+        self.load_settings()
+
+        # Instantiate core controller delegators
+        self.controller = DownloadController(self)
+
+        # ----------------------------------------------------
+        # VIEW LAYER INITIALIZATION
+        # ----------------------------------------------------
+        # 1. Left Sidebar
+        self.sidebar = SidebarFrame(self, on_switch_tab=self.switch_tab)
+        self.sidebar.pack(side="left", fill="y")
+        self.sidebar.pack_propagate(False)
+
+        # 2. Main Content Container Frame (stretches dynamically)
+        self.main_container = ctk.CTkFrame(self, fg_color="#181c24", corner_radius=0)
+        self.main_container.pack(side="right", fill="both", expand=True)
+
+        # 3. Instantiate Panels
+        self.history_panel = HistoryPanel(self.main_container, self)
+        self.add_panel = AddDownloadPanel(self.main_container, self)
+        self.settings_panel = SettingsPanel(self.main_container, self)
+        self.progress_panel = ProgressPanel(self.main_container, self)
+
+        # Display history screen by default
+        self.show_history_screen()
+
+    # ----------------------------------------------------
+    # CONTROLLER COMPATIBILITY PROPERTIES
+    # ----------------------------------------------------
+    @property
+    def download_thread(self):
+        """
+        Returns the active download thread.
+        """
+        return self.controller.download_thread
+
+    @property
+    def current_record_id(self):
+        """
+        Returns the ID of the current download item.
+        """
+        return self.controller.current_record_id
+
+    # ----------------------------------------------------
+    # SETTINGS CONFIGURATION DELEGATORS
+    # ----------------------------------------------------
+    def save_settings(self, event=None):
+        """
+        Saves settings to the settings file.
+        """
+        if self.settings_threads_var is None or self.settings_theme_var is None:
             return
-        self.status_label.configure(text="Starting download...", text_color="blue")
-        self.progress_bar.set(0)
-        self.download_btn.configure(state="disabled")
-        # Save to folder/filename
-        if not os.path.exists(folder):
-            os.makedirs(folder, exist_ok=True)
-        filepath = os.path.join(folder, filename)
-        self.current_url = url
-        self.download_thread = DownloadThread(
-            url,
-            progress_callback=self.update_progress,
-            error_callback=self.download_error,
-            filepath=filepath
-        )
-        self.download_thread.start()
+        save_settings(self.settings_threads_var.get(), self.settings_theme_var.get())
 
-    def update_progress(self, downloaded, total):
-        percent = downloaded / total if total else 0
-        self.progress_bar.set(percent)
-        self.status_label.configure(text=f"Downloading... {int(percent*100)}%", text_color="green")
-        if percent >= 1.0:
-            self.status_label.configure(text="Download Complete!", text_color="#1abc9c")
-            self.download_btn.configure(state="normal")
+    def load_settings(self):
+        """
+        Loads settings from the settings file.
+        """
+        config = load_settings()
+        if self.settings_threads_var is not None:
+            self.settings_threads_var.set(config.get("threads", "4"))
+        else:
+            self.settings_threads_var = ctk.StringVar(value=config.get("threads", "4"))
 
-    def download_error(self, error_msg):
-        self.status_label.configure(text="Error!", text_color="red")
-        self.download_btn.configure(state="normal")
-        messagebox.showerror("Download Error", error_msg)
+        if self.settings_theme_var is not None:
+            self.settings_theme_var.set(config.get("theme", "Dark"))
+        else:
+            self.settings_theme_var = ctk.StringVar(value=config.get("theme", "Dark"))
+
+        ctk.set_appearance_mode(config.get("theme", "Dark"))
+
+    def change_theme(self, choice):
+        """
+        Changes the theme color (Dark, Light, or System) and saves the setting.
+
+        Parameters:
+            choice (str): The theme name choice.
+        """
+        ctk.set_appearance_mode(choice)
+        self.save_settings()
+
+    # ----------------------------------------------------
+    # ROUTING & SCREEN NAVIGATION MANAGEMENT
+    # ----------------------------------------------------
+    def hide_all_screens(self):
+        """
+        Hides all page panels.
+        """
+        self.history_panel.pack_forget()
+        self.add_panel.pack_forget()
+        self.settings_panel.pack_forget()
+        self.progress_panel.pack_forget()
+
+    def switch_tab(self, tab_name):
+        """
+        Switches the visible page panel when a sidebar tab is clicked.
+
+        Parameters:
+            tab_name (str): The name of the tab to load.
+        """
+        self.hide_all_screens()
+        if tab_name == "history":
+            self.history_panel.pack(fill="both", expand=True)
+            self.history_panel.update_history_table()
+        elif tab_name == "add":
+            self.add_panel.pack(fill="both", expand=True)
+        elif tab_name == "settings":
+            self.settings_panel.pack(fill="both", expand=True)
+
+    def show_history_screen(self):
+        """
+        Switches focus to the history screen.
+        """
+        self.sidebar.select_tab("history")
+
+    def show_add_screen(self):
+        """
+        Switches focus to the add download screen.
+        """
+        self.sidebar.select_tab("add")
+
+    def show_settings_screen(self):
+        """
+        Switches focus to the settings screen.
+        """
+        self.sidebar.select_tab("settings")
+
+    def show_active_progress(self):
+        """
+        Shows the download progress panel.
+        """
+        self.hide_all_screens()
+        self.progress_panel.pack(fill="both", expand=True)
+
+    # ----------------------------------------------------
+    # DOWNLOAD RUNTIME DELEGATORS
+    # ----------------------------------------------------
+    def start_download(self, url, folder, filename, size_str):
+        """
+        Starts a file download.
+
+        Parameters:
+            url (str): The link to download the file.
+            folder (str): The folder to save it.
+            filename (str): The name of the file.
+            size_str (str): The file size string.
+        """
+        threads_count = int(self.settings_threads_var.get())
+        self.controller.start_download(url, folder, filename, size_str, threads_count)
+
+    def toggle_pause(self):
+        """
+        Pauses or resumes the current download.
+        """
+        self.controller.toggle_pause()
+
+    def cancel_download(self):
+        """
+        Cancels the current download and deletes the local file.
+        """
+        filename = self.add_panel.filename_var.get().strip()
+        folder = self.add_panel.folder_var.get().strip()
+        self.controller.cancel_download(filename, folder)
+
+    # ----------------------------------------------------
+    # TABLE ACTIONS DELEGATORS
+    # ----------------------------------------------------
+    def delete_record_by_id(self, record_id):
+        """
+        Deletes a download record from the history.
+
+        Parameters:
+            record_id (str): The ID of the record.
+        """
+        if messagebox.askyesno("Delete Confirm", "Are you sure you want to delete this download record from history?"):
+            delete_download_record(record_id)
+            self.history_panel.update_history_table()
+
+    def resume_download_record(self, record):
+        """
+        Resumes a paused, failed, or cancelled download record.
+
+        Parameters:
+            record (dict): The history record details.
+        """
+        threads_count = int(self.settings_threads_var.get())
+        self.controller.resume_download_record(record, threads_count)
+
+    def open_downloaded_file(self, record):
+        """
+        Opens the folder containing the downloaded file and highlights it.
+
+        Parameters:
+            record (dict): The history record details.
+        """
+        filepath = record.get("filepath")
+        if filepath and os.path.exists(filepath):
+            os.system(f'explorer /select,"{os.path.abspath(filepath)}"')
+        else:
+            messagebox.showerror("Error", "File does not exist or was deleted.")
+
 
 if __name__ == "__main__":
     app = DownloadManagerApp()

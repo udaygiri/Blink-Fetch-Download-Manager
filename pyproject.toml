@@ -1,7 +1,13 @@
 [project]
 name = "blink-fetch-download-manager"
-version = "0.1.0"
+version = "0.2.0"
 description = "Blink Fetch is a lightning-fast, multi-threaded download manager designed to optimize file downloads by splitting them into multiple threads. It ensures faster speeds, seamless pause/resume functionality, and efficient bandwidth management. Whether you're downloading large software packages, high-definition videos, or datasets, Blink Fetch makes the process smooth, reliable, and user-friendly."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = ["requests", "tqdm"]
+dependencies = [
+    "requests>=2.31.0",
+    "tqdm>=4.66.0",
+    "customtkinter>=5.2.0",
+    "beautifulsoup4>=4.12.0",
+]
+
